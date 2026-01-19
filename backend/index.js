@@ -32,9 +32,26 @@ wss.on("connection",(ws) => {
     }))
 
     ws.on("message",(data) => {
+        const session = sessions.get(userId)
+        if(!session) return;
+
         const float32Data = new Float32Array(data.buffer)
         const rms = calculateRMS(float32Data)
-        console.log(`User ${userId} RMS: ${rms.toFixed(4)}`);
+
+        // VAD
+        if(rms > volumeThreshold){
+            // Speech Detected
+            if(session.state="idle"){
+                session.state="listening"
+                console.log(`User ${userId} started speaking`);
+            }
+            session.buffer.push(float32Data)
+            session.lastSpeechTime = Date.now()
+        }else{
+            // Silence Detected
+            console.log(`User ${userId} RMS: ${rms.toFixed(4)}`);
+        }
+
     })
     ws.on("close", () => sessions.delete(userId));
 })
