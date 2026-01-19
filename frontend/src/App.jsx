@@ -1,8 +1,11 @@
 import React from 'react'
+import VoiceAgent from './components/VoiceAgent'
 
 const App = () => {
   return (
-    <div>App</div>
+    <div className='min-h-screen bg-gray-900 text-white flex items-center justify-center'>
+      <VoiceAgent/>
+    </div>
   )
 }
 
