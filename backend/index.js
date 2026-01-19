@@ -26,6 +26,11 @@ wss.on("connection",(ws) => {
     sessions.set(userId,{state : "idle", buffer: []})
     console.log(`User ${userId} connected`);
 
+    ws.send(JSON.stringify({
+        type : "session_id",
+        userId: userId
+    }))
+
     ws.on("message",(data) => {
         const float32Data = new Float32Array(data.buffer)
         const rms = calculateRMS(float32Data)
