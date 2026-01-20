@@ -1,4 +1,5 @@
 import {useEffect,useState,useRef} from 'react'
+import { noiseSuppression } from '../utils/helper'
 
 const VoiceAgent = () => {
     const [userId,setUserId] = useState(null)
@@ -14,6 +15,18 @@ const VoiceAgent = () => {
         try{
             streamRef.current = await navigator.mediaDevices.getUserMedia({audio:true})
             audioContextRef.current = new AudioContext({sampleRate:16000})
+            const source = audioContextRef.current.createMediaStreamSource(streamRef.current)
+            processorRef.current = audioContextRef.current.createScriptProcessor(4096,1,1)
+
+            processorRef.current.onaudioprocess = (e) => {
+                const input = e.inputBuffer.getChannelData(0)    // Raw Audio Data
+                const suppressed = noiseSuppression(input)
+                if(wsRef.current?.readyState === WebSocket.OPEN){
+                    wsRef.current.send(suppressed.buffer)
+                }
+            }
+            source.connect(processorRef.current)
+            processorRef.current.connect(audioContextRef.current.destination)
             setIsRecording(true)
         }catch(error){
             console.log("Mic access denied: ",error)
