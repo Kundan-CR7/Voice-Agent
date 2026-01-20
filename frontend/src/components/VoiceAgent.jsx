@@ -10,6 +10,7 @@ const VoiceAgent = () => {
     const streamRef = useRef(null)
     const processorRef = useRef(null)
     const [agentState,setAgentState] = useState("idle")
+    const [transcripts, setTranscripts] = useState([])
 
 
     const startRecording = async() => {
@@ -54,6 +55,12 @@ const VoiceAgent = () => {
             if(msg.type == "agent_state"){
                 setAgentState(msg.state)
             }
+            if(msg.type == "transcipt"){
+                setTranscripts(prev => [...prev,{
+                    role : msg.type,
+                    text : msg.text
+                }])
+            }
         }
         wsRef.current.onclose = () => {
             setStatus("disconnected")
@@ -80,6 +87,18 @@ const VoiceAgent = () => {
                     agentState === 'speaking' ? 'bg-purple-500 animate-pulse' : 'bg-gray-500'
                 }`}></div>
                 <p className='capitalize'>{agentState}</p>
+            </div>
+            <div className='mt-6 bg-gray-700 p-4 rounded-lg max-h-64 overflow-y-auto'>
+                <h2 className='font-semibold mb-2'>Live Transcript</h2>
+                {transcripts.length === 0 ? (
+                    <p className='text-gray-400 text-sm'>No transcript yet...</p>
+                ) : (
+                    transcripts.map((t, i) => (
+                        <p key={i} className={`mb-2 ${t.role === 'user' ? 'text-green-300' : 'text-blue-300'}`}>
+                            <strong>{t.role === 'user' ? 'You' : 'Agent'}:</strong> {t.text}
+                        </p>
+                    ))
+                )}
             </div>
         </div>
     </div>
