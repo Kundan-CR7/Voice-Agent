@@ -1,7 +1,12 @@
 import express from "express"
 import cors from "cors"
+import dotenv from "dotenv"
 import WebSocket,{WebSocketServer} from "ws"
 import { calculateRMS } from "./src/helper.js"
+import { createClient } from "@deepgram/sdk"
+dotenv.config()
+
+const deepgram = createClient(process.env.DEEPGRAM_API_KEY)
 
 const app = express()
 app.use(cors())
