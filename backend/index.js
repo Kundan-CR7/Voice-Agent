@@ -1,7 +1,7 @@
 import express from "express"
 import cors from "cors"
 import WebSocket,{WebSocketServer} from "ws"
-import { calculateRMS } from "./src/helpers"
+import { calculateRMS } from "./src/helper.js"
 
 const app = express()
 app.use(cors())
@@ -41,9 +41,13 @@ wss.on("connection",(ws) => {
         // VAD
         if(rms > volumeThreshold){
             // Speech Detected
-            if(session.state="idle"){
+            if(session.state=="idle"){
                 session.state="listening"
                 console.log(`User ${userId} started speaking`);
+                ws.send(JSON.stringify({
+                    type : "agent_state",
+                    state : "listening"
+                }))
             }
             session.buffer.push(float32Data)
             session.lastSpeechTime = Date.now()

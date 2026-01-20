@@ -9,18 +9,20 @@ const VoiceAgent = () => {
     const audioContextRef = useRef(null)
     const streamRef = useRef(null)
     const processorRef = useRef(null)
+    const [agentState,setAgentState] = useState("idle")
 
 
     const startRecording = async() => {
         try{
             streamRef.current = await navigator.mediaDevices.getUserMedia({audio:true})
             audioContextRef.current = new AudioContext({sampleRate:16000})
-            const source = audioContextRef.current.createMediaStreamSource(streamRef.current)
-            processorRef.current = audioContextRef.current.createScriptProcessor(4096,1,1)
+            await audioContextRef.current.audioWorklet.addModule('/audio-processor.js')
 
-            processorRef.current.onaudioprocess = (e) => {
-                const input = e.inputBuffer.getChannelData(0)    // Raw Audio Data
-                const suppressed = noiseSuppression(input)
+            const source = audioContextRef.current.createMediaStreamSource(streamRef.current)
+            processorRef.current = new AudioWorkletNode(audioContextRef.current, 'audio-processor')
+
+            processorRef.current.port.onmessage = (e) => {
+                const suppressed = noiseSuppression(e.data)
                 if(wsRef.current?.readyState === WebSocket.OPEN){
                     wsRef.current.send(suppressed.buffer)
                 }
@@ -49,6 +51,9 @@ const VoiceAgent = () => {
             if(msg.type == "session_id"){
                 setUserId(msg.userId)
             }
+            if(msg.type == "agent_state"){
+                setAgentState(msg.state)
+            }
         }
         wsRef.current.onclose = () => {
             setStatus("disconnected")
@@ -68,6 +73,14 @@ const VoiceAgent = () => {
             </button>
             <p>Status: <span className={status=="connected"? "text-green-400" : "text-red-400" }>{status}</span></p>
             <p>User ID: <><span className='text-blue-400'>{userId || "Waiting"}</span></> </p>
+            <div className='mt-4 flex items-center space-x-2'>
+                <div className={`w-3 h-3 rounded-full ${
+                    agentState === 'listening' ? 'bg-blue-500 animate-pulse' :
+                    agentState === 'thinking' ? 'bg-yellow-500 animate-pulse' :
+                    agentState === 'speaking' ? 'bg-purple-500 animate-pulse' : 'bg-gray-500'
+                }`}></div>
+                <p className='capitalize'>{agentState}</p>
+            </div>
         </div>
     </div>
   )
