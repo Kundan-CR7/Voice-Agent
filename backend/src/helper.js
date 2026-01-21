@@ -42,4 +42,16 @@ export const createWavBuffer = (float32Array) => {
     offset += 2
     buffer.writeUInt16LE(16, offset); 
     offset += 2
+
+    // data chunk
+    buffer.write('data', offset); offset += 4
+    buffer.writeUInt32LE(dataSize, offset); offset += 4
+
+    // Convert float32 to int16
+    for (let i = 0; i < float32Array.length; i++) {
+        const sample = Math.max(-1, Math.min(1, float32Array[i]))
+        buffer.writeInt16LE(sample * 0x7FFF, offset)
+        offset += 2
+    }
+    return buffer
 }
