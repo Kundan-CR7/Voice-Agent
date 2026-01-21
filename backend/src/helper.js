@@ -6,3 +6,22 @@ export function calculateRMS(float32Array){
     }
     return Math.sqrt(sum/len)
 }
+
+export const createWavBuffer = (float32Array) => {
+    const numChannels = 1
+    const sampleRate = 16000
+    const bytesPerSample = 2
+    const dataSize = float32Array.length * bytesPerSample
+    const bufferSize = 44 + dataSize
+
+    const buffer = Buffer.alloc(bufferSize)
+    let offset = 0
+
+    // RIFF header
+    buffer.write('RIFF', offset); 
+    offset += 4
+    buffer.writeUInt32LE(bufferSize - 8, offset); 
+    offset += 4
+    buffer.write('WAVE', offset); 
+    offset += 4
+}
