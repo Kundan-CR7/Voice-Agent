@@ -24,4 +24,22 @@ export const createWavBuffer = (float32Array) => {
     offset += 4
     buffer.write('WAVE', offset); 
     offset += 4
+
+    // fmt chunk
+    buffer.write('fmt ', offset); 
+    offset += 4
+    buffer.writeUInt32LE(16, offset); 
+    offset += 4
+    buffer.writeUInt16LE(1, offset); 
+    offset += 2
+    buffer.writeUInt16LE(numChannels, offset); 
+    offset += 2
+    buffer.writeUInt32LE(sampleRate, offset); 
+    offset += 4
+    buffer.writeUInt32LE(sampleRate * numChannels * bytesPerSample, offset); 
+    offset += 4
+    buffer.writeUInt16LE(numChannels * bytesPerSample, offset); 
+    offset += 2
+    buffer.writeUInt16LE(16, offset); 
+    offset += 2
 }
