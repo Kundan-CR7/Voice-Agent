@@ -2,7 +2,7 @@ import express from "express"
 import cors from "cors"
 import dotenv from "dotenv"
 import WebSocket,{WebSocketServer} from "ws"
-import { calculateRMS } from "./src/helper.js"
+import { calculateRMS,createWavBuffer } from "./src/helper.js"
 import { createClient } from "@deepgram/sdk"
 dotenv.config()
 
@@ -23,7 +23,9 @@ const sessions = new Map();
 
 // VAD Configuration
 const volumeThreshold = 0.02
-const silenceDurationMS = 1500
+const silenceThreshold = 0.01
+const silenceDurationMS = 800
+const minSpeechFrames = 3
 const frameMS = 250
 
 wss.on("connection",(ws) => {
