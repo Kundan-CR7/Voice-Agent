@@ -78,7 +78,12 @@ wss.on("connection",(ws) => {
         const session = sessions.get(userId)
         if(!session) return;
 
-        const float32Data = new Float32Array(data.buffer)
+        let float32Data;
+        if(data instanceof Buffer){
+            float32Data = new Float32Array(data.buffer)
+        }else{
+            return
+        }
         const rms = calculateRMS(float32Data)
 
         // VAD
