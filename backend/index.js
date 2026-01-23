@@ -80,7 +80,7 @@ wss.on("connection",(ws) => {
 
         let float32Data;
         if(data instanceof Buffer){
-            float32Data = new Float32Array(data.buffer)
+            float32Data = new Float32Array(data.buffer, data.byteOffset, data.length / 4)
         }else{
             return
         }
