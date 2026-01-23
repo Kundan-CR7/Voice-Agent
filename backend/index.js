@@ -62,7 +62,11 @@ const processAudioBuffer = async(buffer,userId,ws) => {
 
 wss.on("connection",(ws) => {
     const userId = Math.random().toString(36).substring(7)
-    sessions.set(userId,{state : "idle", buffer: []})
+    sessions.set(userId,{
+        state : "idle", 
+        buffer: [],
+        speechFrameCount:0
+    })
     console.log(`User ${userId} connected`);
 
     ws.send(JSON.stringify({
