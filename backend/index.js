@@ -88,8 +88,9 @@ wss.on("connection",(ws) => {
 
         // VAD
         if(rms > volumeThreshold){
+            session.speechFrameCount++
             // Speech Detected
-            if(session.state=="idle"){
+            if(session.state=="idle" && session.speechFrameCount >= minSpeechFrames){
                 session.state="listening"
                 console.log(`User ${userId} started speaking`);
                 ws.send(JSON.stringify({
