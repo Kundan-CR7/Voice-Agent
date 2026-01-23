@@ -2,7 +2,7 @@ import express, { text } from "express"
 import cors from "cors"
 import dotenv from "dotenv"
 import WebSocket,{WebSocketServer} from "ws"
-import { calculateRMS,createWavBuffer } from "./src/helper.js"
+import { calculateRMS,createWavBuffer} from "./src/helper.js"
 import { createClient } from "@deepgram/sdk"
 dotenv.config()
 
@@ -24,39 +24,48 @@ const sessions = new Map();
 // VAD Configuration
 const volumeThreshold = 0.02
 const silenceThreshold = 0.01
-const silenceDurationMS = 800
-const minSpeechFrames = 3
+const silenceDurationMS = 1200
+const minSpeechFrames = 10
 const frameMS = 250
+const MIN_FRAMES_FOR_STT = 60;
 
-const processAudioBuffer = async(buffer,userId,ws) => {
-    console.log(`${userId} Starting STT with ${buffer.listen} frames`)
-    try{
-        const totalLength = buffer.reduce((sum,arr) => sum+arr.length,0)
-        const combined = new Float32Array(totalLength)
-        let offset = 0
-        for(const arr of buffer){
-            combined.set(arr,offset)
-            offset += arr.length
-        }
-        const waveBuffer = createWavBuffer(combined)
-        console.log(`${userId} WAV buffer size: ${waveBuffer.length} bytes`)
+async function processAudioBuffer(frames, userId, ws) {
+    if (frames.length < MIN_FRAMES_FOR_STT) {
+        console.log(`[${userId}] Skipping STT (too short)`);
+        return;
+    }
 
-        const {result} = await deepgram.listen.prerecorded.transcribeFile(
-            waveBuffer,
-            {model: "nova-2",smart_format:true}
-        )
-        const transcript = result?.results?.channels?.[0]?.alternatives?.[0]?.transcript
-        console.log(`[${userId}] Transcript: ${transcript}`)
-        if(transcript){
-            ws.send(JSON.stringify({
-                type : "transcript",
-                role : "user",
-                text : transcript
-            }))
-            console.log(`[${userId}] Sent transcript to client`)
-        }
-    }catch(error){
-        console.log(`STT Error: ${error}`)
+    const totalLength = frames.reduce((s, a) => s + a.length, 0);
+    const combined = new Float32Array(totalLength);
+
+    let offset = 0;
+    for (const arr of frames) {
+        combined.set(arr, offset);
+        offset += arr.length;
+    }
+    const wav = createWavBuffer(combined);
+
+    console.log(`[${userId}] STT with ${frames.length} frames`);
+
+    const { result } = await deepgram.listen.prerecorded.transcribeFile(wav, {
+        model: "nova-2",
+        smart_format: true,
+        punctuate: true,
+    });
+
+    const transcript =
+        result?.results?.channels?.[0]?.alternatives?.[0]?.transcript;
+
+    console.log(`[${userId}] Transcript:`, transcript);
+
+    if (transcript) {
+        ws.send(
+        JSON.stringify({
+            type: "transcript",
+            role: "user",
+            text: transcript,
+        })
+        );
     }
 }
 
@@ -102,7 +111,22 @@ wss.on("connection",(ws) => {
             session.lastSpeechTime = Date.now()
         }else{
             // Silence Detected
-            console.log(`User ${userId} RMS: ${rms.toFixed(4)}`);
+            if(session.state == "listening" && session.lastSpeechTime && Date.now()-session.lastSpeechTime > silenceDurationMS){
+                console.log(`[${userId}] stopped speaking`)
+                session.state = "idle"
+                ws.send(JSON.stringify({
+                    type : "agent_state",
+                    state : "thinking"
+                }))
+
+                const speechBuffer = session.buffer
+                processAudioBuffer(speechBuffer,userId,ws)
+
+                session.buffer = []
+                session.speechFrameCount = 0
+                session.lastSpeechTime = null
+
+            }
         }
 
     })
