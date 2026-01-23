@@ -4,6 +4,7 @@ import dotenv from "dotenv"
 import WebSocket,{WebSocketServer} from "ws"
 import { calculateRMS,createWavBuffer} from "./src/helper.js"
 import { createClient } from "@deepgram/sdk"
+import { getLLMResponse } from "./src/llm/openrouter.js"
 dotenv.config()
 
 const deepgram = createClient(process.env.DEEPGRAM_API_KEY)
@@ -58,14 +59,20 @@ async function processAudioBuffer(frames, userId, ws) {
 
     console.log(`[${userId}] Transcript:`, transcript);
 
-    if (transcript) {
-        ws.send(
-        JSON.stringify({
+    if(transcript){
+        ws.send(JSON.stringify({
             type: "transcript",
             role: "user",
             text: transcript,
-        })
-        );
+        }));
+        const agentReply = await getLLMResponse(transcript)
+        console.log(`Agent Reply: ${agentReply}`)
+
+        ws.send(JSON.stringify({
+            type : "transcript",
+            role : "agent",
+            text : agentReply
+        }))
     }
 }
 
