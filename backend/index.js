@@ -1,4 +1,4 @@
-import express from "express"
+import express, { text } from "express"
 import cors from "cors"
 import dotenv from "dotenv"
 import WebSocket,{WebSocketServer} from "ws"
@@ -27,6 +27,38 @@ const silenceThreshold = 0.01
 const silenceDurationMS = 800
 const minSpeechFrames = 3
 const frameMS = 250
+
+const processAudioBuffer = async(buffer,userId,ws) => {
+    console.log(`${userId} Starting STT with ${buffer.listen} frames`)
+    try{
+        const totalLength = buffer.reduce((sum,arr) => sum+arr.length,0)
+        const combined = new Float32Array(totalLength)
+        let offset = 0
+        for(const arr of buffer){
+            combined.set(arr,offset)
+            offset += arr.length
+        }
+        const waveBuffer = createWavBuffer(combined)
+        console.log(`${userId} WAV buffer size: ${waveBuffer.length} bytes`)
+
+        const {result} = await deepgram.listen.prerecorded.transcribeFile(
+            waveBuffer,
+            {model: "nova-2",smart_format:true}
+        )
+        const transcript = result?.results?.channels?.[0]?.alternatives?.[0]?.transcript
+        console.log(`[${userId}] Transcript: ${transcript}`)
+        if(transcript){
+            ws.send(JSON.stringify({
+                type : "transcript",
+                role : "user",
+                text : transcript
+            }))
+            console.log(`[${userId}] Sent transcript to client`)
+        }
+    }catch(error){
+        console.log(`STT Error: ${error}`)
+    }
+}
 
 wss.on("connection",(ws) => {
     const userId = Math.random().toString(36).substring(7)
