@@ -30,7 +30,11 @@ const VoiceAgent = () => {
             processorRef.current.port.onmessage = (e) => {
                 // const suppressed = noiseSuppression(e.data)
                 if(wsRef.current?.readyState === WebSocket.OPEN){
-                    wsRef.current.send(e.data.buffer)
+                    const data = e.data
+                    for(let i=0;i<data.length;i++){
+                        data[i] *= 1.5
+                    }
+                    wsRef.current.send(data.buffer)
                 }
             }
             source.connect(processorRef.current)

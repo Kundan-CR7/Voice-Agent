@@ -1,6 +1,6 @@
 import React from 'react'
 import VoiceAgent from './components/VoiceAgent'
-import Navbar from './components/Navbar'
+// import Navbar from './components/Navbar'
 
 const App = () => {
   return (

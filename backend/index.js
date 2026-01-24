@@ -24,10 +24,10 @@ const sessions = new Map();
 // VAD Configuration
 const volumeThreshold = 0.02
 const silenceThreshold = 0.01
-const silenceDurationMS = 1200
+const silenceDurationMS = 1800
 const minSpeechFrames = 10
 const frameMS = 250
-const MIN_FRAMES_FOR_STT = 60;
+const MIN_FRAMES_FOR_STT = 20;
 
 async function processAudioBuffer(frames, userId, ws) {
     if (frames.length < MIN_FRAMES_FOR_STT) {
@@ -51,6 +51,8 @@ async function processAudioBuffer(frames, userId, ws) {
         model: "nova-2",
         smart_format: true,
         punctuate: true,
+        language: "en",
+        utterances : true
     });
 
     const transcript =
