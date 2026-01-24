@@ -1,11 +1,11 @@
 import React from 'react'
 import VoiceAgent from './components/VoiceAgent'
-// import Navbar from './components/Navbar'
+import Navbar from './components/Navbar'
 
 const App = () => {
   return (
-    <div className='min-h-screen bg-gray-900 text-white flex items-center justify-center'>
-      {/* <Navbar></Navbar> */}
+    <div className='min-h-screen bg-gray-900 text-white flex flex-col items-center pt-32'>
+      <Navbar></Navbar>
       <VoiceAgent/>
     </div>
   )
