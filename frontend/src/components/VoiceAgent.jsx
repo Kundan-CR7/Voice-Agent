@@ -1,5 +1,5 @@
 import {useEffect,useState,useRef} from 'react'
-import { noiseSuppression } from '../utils/helper'
+import { noiseSuppression,playPCM16 } from '../utils/helper'
 
 const VoiceAgent = () => {
     const [userId,setUserId] = useState(null)
@@ -15,6 +15,11 @@ const VoiceAgent = () => {
 
     const startRecording = async() => {
         try{
+            if (!window.ttsAudioCtx) {
+                window.ttsAudioCtx = new AudioContext({ sampleRate: 16000 })
+                await window.ttsAudioCtx.resume()
+                console.log("TTS AudioContext unlocked")
+            }
             streamRef.current = await navigator.mediaDevices.getUserMedia({audio:true})
             audioContextRef.current = new AudioContext({sampleRate:16000})
             await audioContextRef.current.audioWorklet.addModule('/audio-processor.js')
@@ -23,13 +28,12 @@ const VoiceAgent = () => {
             processorRef.current = new AudioWorkletNode(audioContextRef.current, 'audio-processor')
 
             processorRef.current.port.onmessage = (e) => {
-                const suppressed = noiseSuppression(e.data)
+                // const suppressed = noiseSuppression(e.data)
                 if(wsRef.current?.readyState === WebSocket.OPEN){
-                    wsRef.current.send(suppressed.buffer)
+                    wsRef.current.send(e.data.buffer)
                 }
             }
             source.connect(processorRef.current)
-            processorRef.current.connect(audioContextRef.current.destination)
             setIsRecording(true)
         }catch(error){
             console.log("Mic access denied: ",error)
@@ -44,10 +48,26 @@ const VoiceAgent = () => {
 
     useEffect(() => {
         wsRef.current = new WebSocket("ws://localhost:3000")
+        wsRef.current.binaryType = "arraybuffer"
         wsRef.current.onopen = () => {
             setStatus("connected")
         }
-        wsRef.current.onmessage = (event) => {
+        wsRef.current.onmessage = async(event) => {
+            console.log("WS received:", event.data?.constructor?.name)
+
+            if(event.data instanceof ArrayBuffer) {
+                console.log("Audio received, bytes:", event.data.byteLength)
+                playPCM16(event.data)
+                setAgentState("speaking")
+                return
+  }
+
+            if(event.data instanceof Blob){
+                const arrayBuffer = await event.data.arrayBuffer()
+                playPCM16(arrayBuffer)
+                setAgentState("speaking")
+                return
+            }
             const msg = JSON.parse(event.data)
             if(msg.type == "session_id"){
                 setUserId(msg.userId)
@@ -55,9 +75,9 @@ const VoiceAgent = () => {
             if(msg.type == "agent_state"){
                 setAgentState(msg.state)
             }
-            if(msg.type == "transcipt"){
+            if(msg.type == "transcript"){
                 setTranscripts(prev => [...prev,{
-                    role : msg.type,
+                    role : msg.role,
                     text : msg.text
                 }])
             }

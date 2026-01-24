@@ -1,13 +1,12 @@
 import express, { text } from "express"
 import cors from "cors"
-import dotenv from "dotenv"
+import "dotenv/config"
 import WebSocket,{WebSocketServer} from "ws"
 import { calculateRMS,createWavBuffer} from "./src/helper.js"
-import { createClient } from "@deepgram/sdk"
+import { deepgram } from "./src/deepgramClient.js"
 import { getLLMResponse } from "./src/llm/openrouter.js"
-dotenv.config()
+import { textToSpeech } from "./src/tts/deepgram.js"
 
-const deepgram = createClient(process.env.DEEPGRAM_API_KEY)
 
 const app = express()
 app.use(cors())
@@ -65,7 +64,8 @@ async function processAudioBuffer(frames, userId, ws) {
             role: "user",
             text: transcript,
         }));
-        const agentReply = await getLLMResponse(transcript)
+
+        const agentReply = await getLLMResponse(transcript)     //LLM Reply
         console.log(`Agent Reply: ${agentReply}`)
 
         ws.send(JSON.stringify({
@@ -73,6 +73,11 @@ async function processAudioBuffer(frames, userId, ws) {
             role : "agent",
             text : agentReply
         }))
+
+        //TTS
+        const audioBuffer = await textToSpeech(agentReply)
+        console.log("TTS buffer length:", audioBuffer.length);
+        ws.send(audioBuffer)
     }
 }
 
