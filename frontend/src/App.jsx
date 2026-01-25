@@ -4,9 +4,12 @@ import Navbar from './components/Navbar'
 
 const App = () => {
   return (
-    <div className='min-h-screen bg-gray-900 text-white flex flex-col items-center pt-32'>
+    <div className='min-h-screen bg-[#11172e] text-white flex flex-col items-center pt-32'>
       <Navbar/>
-      <VoiceAgent/>
+      <div className='flex justify-end'>
+        <div className='min-w-[40vw] border'>Metric Dashboard</div>
+        <VoiceAgent/>
+      </div>
     </div>
   )
 }
