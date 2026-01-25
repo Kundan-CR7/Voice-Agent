@@ -93,8 +93,26 @@ const VoiceAgent = () => {
     },[])
 
   return (
-    <div className='bg-gray-800 p-8 rounded-lg shadow-xl'>
-        <h1 className='text-2xl font-bold mb-4'>Voice Agent</h1>
+    <div className='p-8 rounded-lg shadow-xl flex flex-col justify-center items-center bg-transparent'>
+
+        {/* Avatar */}
+        <div className={`relative w-32 h-32 rounded-full overflow-hidden border-4 shadow-2xl z-10
+            ${agentState === "speaking" ? "ring-4 ring-purple-500 animate-pulse" : ""}
+            ${agentState === "listening" ? "ring-4 ring-blue-500 animate-pulse" : ""}
+            `}>
+            <img src='/agent.jpg' className='h-full w-full object-cover'/>
+        </div>
+
+        {/* State */}
+        <div className='mt-4 flex items-center space-x-2 border border-gray-500 bg-transparent px-4 py-1 rounded-full'>
+            <div className={`w-3 h-3 rounded-full ${
+                agentState === 'listening' ? 'bg-blue-500 animate-pulse' :
+                agentState === 'thinking' ? 'bg-yellow-500 animate-pulse' :
+                agentState === 'speaking' ? 'bg-purple-500 animate-pulse' : 'bg-gray-500'
+            }`}></div>
+            <p className='capitalize'>{agentState}</p>
+        </div>
+
         <div className='space-y-2'>
             <button 
                 onClick={isRecording ? stopRecording : startRecording}
@@ -104,14 +122,7 @@ const VoiceAgent = () => {
             </button>
             <p>Status: <span className={status=="connected"? "text-green-400" : "text-red-400" }>{status}</span></p>
             <p>User ID: <><span className='text-blue-400'>{userId || "Waiting"}</span></> </p>
-            <div className='mt-4 flex items-center space-x-2'>
-                <div className={`w-3 h-3 rounded-full ${
-                    agentState === 'listening' ? 'bg-blue-500 animate-pulse' :
-                    agentState === 'thinking' ? 'bg-yellow-500 animate-pulse' :
-                    agentState === 'speaking' ? 'bg-purple-500 animate-pulse' : 'bg-gray-500'
-                }`}></div>
-                <p className='capitalize'>{agentState}</p>
-            </div>
+          
             <div className='mt-6 bg-gray-700 p-4 rounded-lg max-h-64 overflow-y-auto'>
                 <h2 className='font-semibold mb-2'>Live Transcript</h2>
                 {transcripts.length === 0 ? (
