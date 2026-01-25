@@ -1,5 +1,6 @@
 import {useEffect,useState,useRef} from 'react'
 import { noiseSuppression,playPCM16 } from '../utils/helper'
+import { AudioWaveform } from './AudioWaveForm'
 
 const VoiceAgent = () => {
     const [userId,setUserId] = useState(null)
@@ -112,6 +113,8 @@ const VoiceAgent = () => {
             }`}></div>
             <p className='capitalize'>{agentState}</p>
         </div>
+
+        <AudioWaveform state={agentState}/>
 
         <div className='space-y-2'>
             <button 
