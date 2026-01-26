@@ -35,3 +35,11 @@ export function playPCM16(buffer){
     source.start()
     console.log("TTS context state:", ttsAudioCtx.state)
 }
+
+export function calculateRMS(data){
+    let sum = 0
+    for(let i=0;i<data.length;i++){
+        sum += data[i] * data[i]
+    }
+    return Math.sqrt(sum/data.length)
+}

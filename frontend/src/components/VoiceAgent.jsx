@@ -1,8 +1,9 @@
 import {useEffect,useState,useRef} from 'react'
-import { noiseSuppression,playPCM16 } from '../utils/helper'
+import { noiseSuppression,playPCM16,calculateRMS } from '../utils/helper'
 import { AudioWaveform } from './AudioWaveForm'
+import RMSGraph from './RMSGraph'
 
-const VoiceAgent = () => {
+const VoiceAgent = ({setRmsData}) => {
     const [userId,setUserId] = useState(null)
     const [status,setStatus] = useState("disconnected")
     const wsRef = useRef(null)
@@ -12,6 +13,9 @@ const VoiceAgent = () => {
     const processorRef = useRef(null)
     const [agentState,setAgentState] = useState("idle")
     const [transcripts, setTranscripts] = useState([])
+    const agentSourceRef = useRef(null)
+    const isAgentSpeakingRef = useRef(false)
+    const rmsHistoryRef = useRef([]);
 
 
     const startRecording = async() => {
@@ -28,13 +32,35 @@ const VoiceAgent = () => {
             const source = audioContextRef.current.createMediaStreamSource(streamRef.current)
             processorRef.current = new AudioWorkletNode(audioContextRef.current, 'audio-processor')
 
+            let frameCount = 0;
             processorRef.current.port.onmessage = (e) => {
+                const data = e.data
+                const rms = calculateRMS(data)
+
+                rmsHistoryRef.current.push(rms);
+                if(rmsHistoryRef.current.length > 400){
+                    rmsHistoryRef.current.shift()
+                }
+
+                frameCount++
+                if (frameCount % 5 === 0) {
+                    setRmsData([...rmsHistoryRef.current])
+                }
+                // BARGE-IN
+                if(isAgentSpeakingRef.current && rms>0.04){
+                    console.log("Barge-in detected")
+                    if(agentSourceRef.current){
+                        agentSourceRef.current.stop()
+                        agentSourceRef.current = null
+                    }
+                    
+                    isAgentSpeakingRef.current = false
+                    setAgentState("listening")
+                }
+
                 // const suppressed = noiseSuppression(e.data)
                 if(wsRef.current?.readyState === WebSocket.OPEN){
                     const data = e.data
-                    for(let i=0;i<data.length;i++){
-                        data[i] *= 1.5
-                    }
                     wsRef.current.send(data.buffer)
                 }
             }
@@ -51,6 +77,45 @@ const VoiceAgent = () => {
         setIsRecording(false)
     }
 
+    const playAgentAudio = (buffer) => {
+        // STOP previous agent speech if any
+        console.log("🔊 playAgentAudio called");
+        console.log("AudioCtx state:", window.ttsAudioCtx?.state);
+        console.log("Buffer bytes:", buffer?.byteLength);
+
+        if(agentSourceRef.current){
+            agentSourceRef.current.stop()
+            agentSourceRef.current = null
+        }
+
+        const audioCtx = window.ttsAudioCtx
+        const pcm16 = new Int16Array(buffer)
+        const float32 = new Float32Array(pcm16.length)
+
+        for(let i=0;i<pcm16.length;i++){
+            float32[i] = pcm16[i]/0x8000
+        }
+
+        const aduioBuffer = audioCtx.createBuffer(1,float32.length,16000)
+        aduioBuffer.getChannelData(0).set(float32)
+
+        const source = audioCtx.createBufferSource()
+        source.buffer = aduioBuffer
+        source.connect(audioCtx.destination)
+
+        agentSourceRef.current = source
+        isAgentSpeakingRef.current = true
+        setAgentState("speaking")
+
+        source.onended = () => {
+            isAgentSpeakingRef.current = false
+            agentSourceRef.current = null
+            setAgentState("idle")
+        }
+        source.start()
+    }
+
+
     useEffect(() => {
         wsRef.current = new WebSocket("ws://localhost:3000")
         wsRef.current.binaryType = "arraybuffer"
@@ -62,14 +127,14 @@ const VoiceAgent = () => {
 
             if(event.data instanceof ArrayBuffer) {
                 console.log("Audio received, bytes:", event.data.byteLength)
-                playPCM16(event.data)
+                playAgentAudio(event.data)
                 setAgentState("speaking")
                 return
   }
 
             if(event.data instanceof Blob){
                 const arrayBuffer = await event.data.arrayBuffer()
-                playPCM16(arrayBuffer)
+                playAgentAudio(arrayBuffer)
                 setAgentState("speaking")
                 return
             }
@@ -94,7 +159,7 @@ const VoiceAgent = () => {
     },[])
 
   return (
-    <div className='p-8 rounded-lg shadow-xl flex flex-col items-center bg-transparent border min-w-[60vw] min-h-[85vh]'>
+    <div className='p-8 rounded-lg shadow-xl flex flex-col items-center bg-transparent border min-w-[55vw] min-h-[85vh]'>
 
         {/* Avatar */}
         <div className={`relative w-32 h-32 rounded-full overflow-hidden border-4 shadow-2xl z-10
@@ -147,7 +212,6 @@ const VoiceAgent = () => {
 
 
             {/* Transcript */}
-            <h2 className="font-semibold mb-2 text-gray-200 text-center font-serif">{transcripts.length==0 ? "" : "Live Transcript"}</h2>
             <div className="mt-6 w-full max-w-full md:max-w-[70vh] mx-auto backdrop-blur-md p-4 rounded-2xl max-h-64 overflow-y-auto space-y-5">
 
                 {transcripts.length === 0 ? (
