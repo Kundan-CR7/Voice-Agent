@@ -3,7 +3,7 @@ import { noiseSuppression,playPCM16,calculateRMS } from '../utils/helper'
 import { AudioWaveform } from './AudioWaveForm'
 import RMSGraph from './RMSGraph'
 
-const VoiceAgent = ({setRmsData}) => {
+const VoiceAgent = ({setRmsData,setMetrics}) => {
     const [userId,setUserId] = useState(null)
     const [status,setStatus] = useState("disconnected")
     const wsRef = useRef(null)
@@ -16,7 +16,7 @@ const VoiceAgent = ({setRmsData}) => {
     const agentSourceRef = useRef(null)
     const isAgentSpeakingRef = useRef(false)
     const rmsHistoryRef = useRef([]);
-
+    
 
     const startRecording = async() => {
         try{
@@ -141,6 +141,12 @@ const VoiceAgent = ({setRmsData}) => {
             const msg = JSON.parse(event.data)
             if(msg.type == "session_id"){
                 setUserId(msg.userId)
+            }
+            if(msg.type == "metric"){
+                setMetrics(prev => ({
+                    ...prev,
+                    [msg.name] : msg.data
+                }))
             }
             if(msg.type == "agent_state"){
                 setAgentState(msg.state)

@@ -24,7 +24,7 @@ const sessions = new Map();
 // VAD Configuration
 const volumeThreshold = 0.02
 const silenceThreshold = 0.01
-const silenceDurationMS = 1800
+const silenceDurationMS = 600
 const minSpeechFrames = 10
 const frameMS = 250
 const MIN_FRAMES_FOR_STT = 20;
@@ -88,7 +88,9 @@ wss.on("connection",(ws) => {
     sessions.set(userId,{
         state : "idle", 
         buffer: [],
-        speechFrameCount:0
+        speechFrameCount:0,
+        speechStartTime: null,
+        lastSpeechTime: null
     })
     console.log(`User ${userId} connected`);
 
@@ -111,6 +113,13 @@ wss.on("connection",(ws) => {
 
         // VAD
         if(rms > volumeThreshold){
+            const now = Date.now()
+            if(!session.speechStartTime){
+                session.speechStartTime = now
+            }
+            session.lastSpeechTime = now
+            session.speechEndTime = now
+
             session.speechFrameCount++
             // Speech Detected
             if(session.state=="idle" && session.speechFrameCount >= minSpeechFrames){
@@ -122,12 +131,29 @@ wss.on("connection",(ws) => {
                 }))
             }
             session.buffer.push(float32Data)
-            session.lastSpeechTime = Date.now()
         }else{
             // Silence Detected
             if(session.state == "listening" && session.lastSpeechTime && Date.now()-session.lastSpeechTime > silenceDurationMS){
                 console.log(`[${userId}] stopped speaking`)
+
+                //VAD Metrics
+                const vadDetectedAt = Date.now()
+                const vadLatency = vadDetectedAt - session.speechEndTime
+
+                console.log("🔥 VAD FIRED", {
+                    vadLatency,
+                    silenceDurationMS,
+                    now: vadDetectedAt
+                })
+
+                ws.send(JSON.stringify({
+                    type : "metric",
+                    name : "vadLatency",
+                    data : vadLatency
+                }))
+
                 session.state = "idle"
+
                 ws.send(JSON.stringify({
                     type : "agent_state",
                     state : "thinking"
@@ -139,6 +165,7 @@ wss.on("connection",(ws) => {
                 session.buffer = []
                 session.speechFrameCount = 0
                 session.lastSpeechTime = null
+                session.speechStartTime = null
 
             }
         }
