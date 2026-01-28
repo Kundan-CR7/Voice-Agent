@@ -16,7 +16,9 @@ const VoiceAgent = ({setRmsData,setMetrics}) => {
     const agentSourceRef = useRef(null)
     const isAgentSpeakingRef = useRef(false)
     const rmsHistoryRef = useRef([]);
-    
+    const localUrl = import.meta.env.VITE_LOCAL_URL
+    const hostedUrl = import.meta.env.VITE_HOSTED_URL
+    const e2eStartRef = useRef(null);
 
     const startRecording = async() => {
         try{
@@ -113,7 +115,7 @@ const VoiceAgent = ({setRmsData,setMetrics}) => {
 
 
     useEffect(() => {
-        wsRef.current = new WebSocket("https://voice-agent-hn81.onrender.com/")
+        wsRef.current = new WebSocket(hostedUrl)
         wsRef.current.binaryType = "arraybuffer"
         wsRef.current.onopen = () => {
             setStatus("connected")

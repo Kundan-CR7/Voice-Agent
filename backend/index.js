@@ -34,7 +34,7 @@ const minSpeechFrames = 10
 const frameMS = 250
 const MIN_FRAMES_FOR_STT = 20;
 
-async function processAudioBuffer(frames, userId, ws) {
+async function processAudioBuffer(frames, userId, ws, e2eStartTime) {
     if (frames.length < MIN_FRAMES_FOR_STT) {
         console.log(`[${userId}] Skipping STT (too short)`);
         return;
@@ -108,6 +108,19 @@ async function processAudioBuffer(frames, userId, ws) {
 
         //TTS
         const ttsResult = await textToSpeech(agentReply)
+
+        //E2ELatency
+        const agentAudioReadyAt = Date.now()
+        if(e2eStartTime){
+            const e2eLatency = agentAudioReadyAt - e2eStartTime
+            console.log("E2ELatency: ",e2eLatency)
+            ws.send(JSON.stringify({
+                type: "metric",
+                name: "e2eLatency",
+                data: e2eLatency
+            }))
+        }
+
         ws.send(JSON.stringify({
             type : "metric",
             name : "ttsLatency",
@@ -172,6 +185,7 @@ wss.on("connection",(ws) => {
 
                 //VAD Metrics
                 const vadDetectedAt = Date.now()
+                const e2eStartTime = vadDetectedAt
                 const vadLatency = vadDetectedAt - session.speechEndTime
 
                 console.log("VAD FIRED", {
@@ -179,6 +193,7 @@ wss.on("connection",(ws) => {
                     silenceDurationMS,
                     now: vadDetectedAt
                 })
+
 
                 ws.send(JSON.stringify({
                     type : "metric",
@@ -194,7 +209,7 @@ wss.on("connection",(ws) => {
                 }))
 
                 const speechBuffer = session.buffer
-                processAudioBuffer(speechBuffer,userId,ws)
+                processAudioBuffer(speechBuffer,userId,ws,e2eStartTime)
 
                 session.buffer = []
                 session.speechFrameCount = 0
