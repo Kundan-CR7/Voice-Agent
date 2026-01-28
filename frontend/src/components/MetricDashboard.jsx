@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
-import RMSGraph from './RMSGraph'
-import MetricCard from './MetricCard'
+import RMSGraph from './RMSGraph.jsx'
+import MetricCard from './MetricCard.jsx'
 
 const MetricDashboard = ({rmsData,rmsThreshold,metrics={}}) => {
     useEffect(() => {

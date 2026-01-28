@@ -1,7 +1,7 @@
 import {useEffect,useState,useRef} from 'react'
-import { noiseSuppression,playPCM16,calculateRMS } from '../utils/helper'
-import { AudioWaveform } from './AudioWaveForm'
-import RMSGraph from './RMSGraph'
+import { noiseSuppression,playPCM16,calculateRMS } from '../utils/helper.js'
+import { AudioWaveform } from './AudioWaveform.jsx'
+import RMSGraph from './RMSGraph.jsx'
 
 const VoiceAgent = ({setRmsData,setMetrics}) => {
     const [userId,setUserId] = useState(null)
