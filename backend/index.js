@@ -47,6 +47,8 @@ async function processAudioBuffer(frames, userId, ws) {
 
     console.log(`[${userId}] STT with ${frames.length} frames`);
 
+    const sttStartTime = Date.now()
+
     const { result } = await deepgram.listen.prerecorded.transcribeFile(wav, {
         model: "nova-2",
         smart_format: true,
@@ -54,6 +56,9 @@ async function processAudioBuffer(frames, userId, ws) {
         language: "en",
         utterances : true
     });
+
+    const sttEndTime = Date.now()
+    const sttLatency = sttEndTime - sttStartTime
 
     const transcript =
         result?.results?.channels?.[0]?.alternatives?.[0]?.transcript;
@@ -66,6 +71,12 @@ async function processAudioBuffer(frames, userId, ws) {
             role: "user",
             text: transcript,
         }));
+
+        ws.send(JSON.stringify({
+            type : "metric",
+            name : "sttLatency",
+            data : sttLatency
+        }))
 
         const agentReply = await getLLMResponse(transcript)     //LLM Reply
         console.log(`Agent Reply: ${agentReply}`)
@@ -140,7 +151,7 @@ wss.on("connection",(ws) => {
                 const vadDetectedAt = Date.now()
                 const vadLatency = vadDetectedAt - session.speechEndTime
 
-                console.log("🔥 VAD FIRED", {
+                console.log("VAD FIRED", {
                     vadLatency,
                     silenceDurationMS,
                     now: vadDetectedAt

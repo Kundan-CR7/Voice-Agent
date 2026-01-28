@@ -42,7 +42,8 @@ const Navbar = () => {
     }, [hoveredTab]);
 
     return (
-        <nav className="fixed top-0 left-0 right-0 z-50 h-18 bg-surface/30 backdrop-blur-md px-6 flex items-center justify-between border-[#3f3f3f] bg-linear-to-t from-[#141414] to-[#242424]">
+        <nav className="fixed top-0 left-0 right-0 z-50 h-18 bg-surface/30 backdrop-blur-md px-6 flex items-center justify-between border-[#3f3f3f] bg-transparent">
+            {/* bg-linear-to-t from-[#141414] to-[#242424] */}
             <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary border border-primary/50">
                     <Mic2 size={18} />
