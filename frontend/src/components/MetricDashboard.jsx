@@ -25,25 +25,31 @@ const MetricDashboard = ({rmsData,rmsThreshold,metrics={}}) => {
                 title="STT Latency"
                 value={metrics.sttLatency}
                 unit="ms"
-                />
-
-            <MetricCard
-            title="LLM Latency"
-            value={metrics.llmLatency}
-            unit="ms"
             />
 
             <MetricCard
-            title="TTS Latency"
-            value={metrics.ttsLatency}
-            unit="ms"
+                title="LLM Latency"
+                value={metrics.llmLatency?? "--"}
+                unit="ms"
             />
 
             <MetricCard
-            title="E2E Latency"
-            value={metrics.e2eLatency}
-            unit="ms"
-            status="warning"
+                title="LLM TTFT"
+                value={metrics.llmTTFT ?? "--"}
+                unit="ms"
+            />
+
+            <MetricCard
+                title="TTS Latency"
+                value={metrics.ttsLatency}
+                unit="ms"
+            />
+
+            <MetricCard
+                title="E2E Latency"
+                value={metrics.e2eLatency}
+                unit="ms"
+                status="warning"
             />
             </div>
         </section>

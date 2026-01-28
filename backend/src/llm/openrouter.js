@@ -1,6 +1,11 @@
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
 export async function getLLMResponse(userText){
+
+    const startTime = Date.now()
+    let ttft = null
+    let fullText = ""
+
     const response = await fetch(OPENROUTER_URL,{
         method : "POST",
         headers : {
@@ -9,6 +14,7 @@ export async function getLLMResponse(userText){
         },
         body : JSON.stringify({
             model : "mistralai/mistral-7b-instruct",
+            stream: true,
             messages : [
                 {
                     role : "system",
@@ -23,11 +29,37 @@ export async function getLLMResponse(userText){
             max_tokens : 150
         })
     })
-    const data = await response.json()
+    
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder()
 
-    if(!data.choices || !data.choices[0]){
-        console.error("OpenRouter error:", data)
-        return "Sorry, I had trouble responding."; 
+    while(true){
+        const {value,done} = await reader.read()
+        if(done){
+            break
+        }
+        const chunk = decoder.decode(value)
+        const lines = chunk.split("\n").filter(l => l.startsWith("data: "));
+
+        for(const line of lines){
+            if(line.includes("[DONE]")) continue
+
+            const json = JSON.parse(line.replace("data: ", ""));
+            const token = json.choices?.[0]?.delta?.content;
+
+            if(token){
+                if(!ttft){
+                    ttft = Date.now() - startTime
+                }
+                fullText += token
+            }
+        }
     }
-    return data.choices[0].message.content
+    const totalLatency = Date.now() - startTime;
+    return {
+        text : fullText.trim(),
+        metrics : {
+            ttft,totalLatency
+        }
+    }
 }

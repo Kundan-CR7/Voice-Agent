@@ -78,7 +78,21 @@ async function processAudioBuffer(frames, userId, ws) {
             data : sttLatency
         }))
 
-        const agentReply = await getLLMResponse(transcript)     //LLM Reply
+        const {text,metrics} = await getLLMResponse(transcript) //LLM Reply
+
+        ws.send(JSON.stringify({
+            type : "metric",
+            name : "llmLatency",
+            data : metrics.totalLatency
+        }))
+
+        ws.send(JSON.stringify({
+            type: "metric",
+            name: "llmTTFT",
+            data: metrics.ttft
+        }));
+
+        const agentReply = text
         console.log(`Agent Reply: ${agentReply}`)
 
         ws.send(JSON.stringify({
