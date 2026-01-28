@@ -113,7 +113,7 @@ const VoiceAgent = ({setRmsData,setMetrics}) => {
 
 
     useEffect(() => {
-        wsRef.current = new WebSocket("ws://localhost:3000")
+        wsRef.current = new WebSocket("https://voice-agent-backend1-production.up.railway.app/")
         wsRef.current.binaryType = "arraybuffer"
         wsRef.current.onopen = () => {
             setStatus("connected")
