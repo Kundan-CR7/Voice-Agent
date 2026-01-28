@@ -6,13 +6,8 @@ import MetricDashboard from './components/MetricDashboard'
 const App = () => {
   const [rmsData,setRmsData] = useState([])
   const RMS_THRESHOLD = 0.04
-  const [metrics, setMetrics] = useState({
-    vadLatency: 120,
-    sttLatency: 380,
-    llmLatency: 540,
-    ttsLatency: 210,
-    e2eLatency: 1250,
-  });
+  const [metrics, setMetrics] = useState({});
+  
   return (
     <div className='min-h-screen bg-[#11172e] text-white flex flex-col items-center pt-32'>
       <Navbar/>

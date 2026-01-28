@@ -102,9 +102,13 @@ async function processAudioBuffer(frames, userId, ws) {
         }))
 
         //TTS
-        const audioBuffer = await textToSpeech(agentReply)
-        console.log("TTS buffer length:", audioBuffer.length);
-        ws.send(audioBuffer)
+        const ttsResult = await textToSpeech(agentReply)
+        ws.send(JSON.stringify({
+            type : "metric",
+            name : "ttsLatency",
+            data : ttsResult.ttsLatency
+        }))
+        ws.send(ttsResult.audioBuffer)
     }
 }
 

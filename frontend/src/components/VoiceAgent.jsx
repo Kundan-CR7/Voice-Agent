@@ -79,10 +79,6 @@ const VoiceAgent = ({setRmsData,setMetrics}) => {
 
     const playAgentAudio = (buffer) => {
         // STOP previous agent speech if any
-        console.log("🔊 playAgentAudio called");
-        console.log("AudioCtx state:", window.ttsAudioCtx?.state);
-        console.log("Buffer bytes:", buffer?.byteLength);
-
         if(agentSourceRef.current){
             agentSourceRef.current.stop()
             agentSourceRef.current = null

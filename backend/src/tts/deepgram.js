@@ -1,6 +1,8 @@
 import { deepgram } from "../deepgramClient.js"
 
 export async function textToSpeech(text){
+    const startTime = Date.now()
+
     const response = await deepgram.speak.request(
         {text},
         {
@@ -19,5 +21,11 @@ export async function textToSpeech(text){
         if(done) break
         chunks.push(Buffer.from(value))
     }
-    return Buffer.concat(chunks)
+    const audioBuffer = Buffer.concat(chunks)
+    const ttsLatency = Date.now() - startTime
+
+    return {
+        audioBuffer,
+        ttsLatency
+    }
 }

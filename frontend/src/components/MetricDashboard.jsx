@@ -16,14 +16,14 @@ const MetricDashboard = ({rmsData,rmsThreshold,metrics={}}) => {
             <div className='grid grid-cols-2 gap-5 mt-4'>
             <MetricCard
                 title="VAD Detection"
-                value={metrics.vadLatency}
+                value={metrics.vadLatency?? "--"}
                 unit="ms"
                 subtitle="Silence → end of speech"
                 status="active"
             />
             <MetricCard
                 title="STT Latency"
-                value={metrics.sttLatency}
+                value={metrics.sttLatency?? "--"}
                 unit="ms"
             />
 
@@ -41,13 +41,13 @@ const MetricDashboard = ({rmsData,rmsThreshold,metrics={}}) => {
 
             <MetricCard
                 title="TTS Latency"
-                value={metrics.ttsLatency}
+                value={metrics.ttsLatency?? "--"}
                 unit="ms"
             />
 
             <MetricCard
                 title="E2E Latency"
-                value={metrics.e2eLatency}
+                value={metrics.e2eLatency?? "--"}
                 unit="ms"
                 status="warning"
             />

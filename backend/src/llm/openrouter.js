@@ -5,6 +5,7 @@ export async function getLLMResponse(userText){
     const startTime = Date.now()
     let ttft = null
     let fullText = ""
+    let buffer = ""
 
     const response = await fetch(OPENROUTER_URL,{
         method : "POST",
@@ -38,21 +39,29 @@ export async function getLLMResponse(userText){
         if(done){
             break
         }
-        const chunk = decoder.decode(value)
-        const lines = chunk.split("\n").filter(l => l.startsWith("data: "));
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n")
+        buffer = lines.pop()
 
         for(const line of lines){
+            if (!line.startsWith("data: ")) continue;
             if(line.includes("[DONE]")) continue
 
-            const json = JSON.parse(line.replace("data: ", ""));
-            const token = json.choices?.[0]?.delta?.content;
-
-            if(token){
-                if(!ttft){
-                    ttft = Date.now() - startTime
+            try{
+                const json = JSON.parse(line.replace("data: ", ""));
+                const token = json.choices?.[0]?.delta?.content;
+    
+                if(token){
+                    if(!ttft){
+                        ttft = Date.now() - startTime
+                    }
+                    fullText += token
                 }
-                fullText += token
+            }catch(err){
+                console.warn("Skipping partial JSON chunk");
             }
+
         }
     }
     const totalLatency = Date.now() - startTime;
