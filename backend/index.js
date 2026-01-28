@@ -11,6 +11,11 @@ import { textToSpeech } from "./src/tts/deepgram.js"
 const app = express()
 app.use(cors())
 
+app.get("/", (req, res) => {
+  res.send("Voice Agent backend is live");
+});
+
+
 const PORT = process.env.PORT || 3000
 
 const server = app.listen(PORT,() => {
