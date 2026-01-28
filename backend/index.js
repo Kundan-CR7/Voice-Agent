@@ -11,7 +11,7 @@ import { textToSpeech } from "./src/tts/deepgram.js"
 const app = express()
 app.use(cors())
 
-const PORT = 3000
+const PORT = process.env.PORT || 3000
 
 const server = app.listen(PORT,() => {
     console.log(`Server is running on http://localhost:${PORT}`)
