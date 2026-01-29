@@ -19,7 +19,7 @@ export async function getLLMResponse(userText,systemPrompt){
             messages : [
                 {
                     role : "system",
-                    content : systemPrompt || "You are a concise, friendly AI voice assistant. Keep response short and natural for speech."
+                    content : systemPrompt || "You are a concise, friendly AI voice assistant with a name Aiko. Keep response short and natural for speech."
                 },
                 {
                     role : "user",
