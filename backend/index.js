@@ -2,10 +2,11 @@ import express, { text } from "express"
 import cors from "cors"
 import "dotenv/config"
 import WebSocket,{WebSocketServer} from "ws"
-import { calculateRMS,createWavBuffer} from "./src/helper.js"
+import { calculateRMS,createWavBuffer,shouldSearch} from "./src/helper.js"
 import { deepgram } from "./src/deepgramClient.js"
 import { getLLMResponse } from "./src/llm/openrouter.js"
 import { textToSpeech } from "./src/tts/deepgram.js"
+import { webSearch } from "./src/search/tavily.js"
 
 
 const app = express()
@@ -84,6 +85,13 @@ async function processAudioBuffer(frames, userId, ws, session) {
 
     console.log(`[${userId}] Transcript:`, transcript);
 
+    let searchContext = ""
+    if(shouldSearch(transcript)){
+        const result = await webSearch(transcript)
+        searchContext = result.results.map((r,i) => `Source ${i + 1}: ${r.content} (${r.url})`).join("\n")
+        console.log(`[SEARCH USED] ${userId}`);
+    }
+
     if(transcript){
         ws.send(JSON.stringify({
             type: "transcript",
@@ -96,8 +104,16 @@ async function processAudioBuffer(frames, userId, ws, session) {
             name : "sttLatency",
             data : sttLatency
         }))
+        const augmentedSystemPrompt = `
+        ${session.systemPrompt}
 
-        const {text,metrics} = await getLLMResponse(transcript,session.systemPrompt) //LLM Reply
+        ${searchContext ? "Use the following real-time information:" : ""}
+        ${searchContext}
+
+        When using this information, cite sources like (Source 1).
+        `;
+
+        const {text,metrics} = await getLLMResponse(transcript,augmentedSystemPrompt) //LLM Reply
 
         ws.send(JSON.stringify({
             type : "metric",

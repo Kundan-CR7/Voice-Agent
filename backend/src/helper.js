@@ -67,3 +67,13 @@ export function float32ToInt16(float32Array) {
   }
   return Buffer.from(buffer);
 }
+
+export function shouldSearch(text){
+  const triggers = [
+    "today", "latest", "current", "news",
+    "price", "weather", "score", "who won",
+    "recent", "now", "happening"
+  ];
+  const textLower = text.toLowerCase()
+  return triggers.some(t => textLower.includes(t))
+}
