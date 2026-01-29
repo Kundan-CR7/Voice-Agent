@@ -1,6 +1,6 @@
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
-export async function getLLMResponse(userText){
+export async function getLLMResponse(userText,systemPrompt){
 
     const startTime = Date.now()
     let ttft = null
@@ -19,7 +19,7 @@ export async function getLLMResponse(userText){
             messages : [
                 {
                     role : "system",
-                    content : "You are a concise, friendly AI voice assistant. Keep response short and natural for speech."
+                    content : systemPrompt || "You are a concise, friendly AI voice assistant. Keep response short and natural for speech."
                 },
                 {
                     role : "user",

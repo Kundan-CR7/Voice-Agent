@@ -11,9 +11,25 @@ import { textToSpeech } from "./src/tts/deepgram.js"
 const app = express()
 app.use(cors())
 
+const sessions = new Map();
+
 app.get("/", (req, res) => {
   res.send("Voice Agent backend is live");
 });
+
+app.post("/session/:userId/context",express.json(),(req,res) => {
+    const {userId} = req.params
+    const {systemPrompt} = req.body
+
+    const session = sessions.get(userId)
+    if(!session){
+        return res.status(404).json({error : "Session not found"})
+    }
+
+    session.systemPrompt = systemPrompt
+    console.log(`[CONTEXT UPDATE] ${userId}:`, systemPrompt);
+    res.json({success:true})
+})
 
 
 const PORT = process.env.PORT || 3000
@@ -24,8 +40,6 @@ const server = app.listen(PORT,() => {
 
 const wss = new WebSocketServer({server})
 
-const sessions = new Map();
-
 // VAD Configuration
 const volumeThreshold = 0.02
 const silenceThreshold = 0.01
@@ -34,7 +48,7 @@ const minSpeechFrames = 10
 const frameMS = 250
 const MIN_FRAMES_FOR_STT = 20;
 
-async function processAudioBuffer(frames, userId, ws, e2eStartTime) {
+async function processAudioBuffer(frames, userId, ws, session) {
     if (frames.length < MIN_FRAMES_FOR_STT) {
         console.log(`[${userId}] Skipping STT (too short)`);
         return;
@@ -83,7 +97,7 @@ async function processAudioBuffer(frames, userId, ws, e2eStartTime) {
             data : sttLatency
         }))
 
-        const {text,metrics} = await getLLMResponse(transcript) //LLM Reply
+        const {text,metrics} = await getLLMResponse(transcript,session.systemPrompt) //LLM Reply
 
         ws.send(JSON.stringify({
             type : "metric",
@@ -111,14 +125,15 @@ async function processAudioBuffer(frames, userId, ws, e2eStartTime) {
 
         //E2ELatency
         const agentAudioReadyAt = Date.now()
-        if(e2eStartTime){
-            const e2eLatency = agentAudioReadyAt - e2eStartTime
+        if(session.e2eStartTime){
+            const e2eLatency = agentAudioReadyAt - session.e2eStartTime
             console.log("E2ELatency: ",e2eLatency)
             ws.send(JSON.stringify({
                 type: "metric",
                 name: "e2eLatency",
                 data: e2eLatency
             }))
+            session.e2eStartTime = null
         }
 
         ws.send(JSON.stringify({
@@ -137,7 +152,8 @@ wss.on("connection",(ws) => {
         buffer: [],
         speechFrameCount:0,
         speechStartTime: null,
-        lastSpeechTime: null
+        lastSpeechTime: null,
+        systemPrompt : "You are a concise, friendly AI voice assistant."
     })
     console.log(`User ${userId} connected`);
 
@@ -185,7 +201,7 @@ wss.on("connection",(ws) => {
 
                 //VAD Metrics
                 const vadDetectedAt = Date.now()
-                const e2eStartTime = vadDetectedAt
+                session.e2eStartTime = vadDetectedAt
                 const vadLatency = vadDetectedAt - session.speechEndTime
 
                 console.log("VAD FIRED", {
@@ -209,7 +225,7 @@ wss.on("connection",(ws) => {
                 }))
 
                 const speechBuffer = session.buffer
-                processAudioBuffer(speechBuffer,userId,ws,e2eStartTime)
+                processAudioBuffer(speechBuffer,userId,ws,session)
 
                 session.buffer = []
                 session.speechFrameCount = 0

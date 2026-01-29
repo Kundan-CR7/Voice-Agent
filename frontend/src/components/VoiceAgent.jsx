@@ -115,7 +115,7 @@ const VoiceAgent = ({setRmsData,setMetrics}) => {
 
 
     useEffect(() => {
-        wsRef.current = new WebSocket(hostedUrl)
+        wsRef.current = new WebSocket(localUrl)
         wsRef.current.binaryType = "arraybuffer"
         wsRef.current.onopen = () => {
             setStatus("connected")
