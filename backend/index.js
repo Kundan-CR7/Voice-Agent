@@ -179,7 +179,7 @@ async function processAudioBuffer(frames, userId, ws, session) {
         ws.send(ttsResult.audioBuffer)
         log("TURN_COMPLETE", {
             sessionId: userId,
-            e2eLatency
+            e2eLatency : e2eLatency? e2eLatency : agentAudioReadyAt - session.e2eStartTime
         })
     }
 }
