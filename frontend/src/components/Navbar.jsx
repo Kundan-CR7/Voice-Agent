@@ -12,7 +12,7 @@ const Navbar = ({ isFullScreen, setIsFullScreen }) => {
                     <Mic2 size={20} />
                 </div>
                 <div>
-                    <span className="font-bold text-xl tracking-tight text-white block leading-none">Aiko Agent</span>
+                    <span className="font-bold text-xl tracking-tight text-white block leading-none">Voice Agent</span>
                 </div>
             </div>
 
