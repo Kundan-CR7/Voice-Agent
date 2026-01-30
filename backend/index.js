@@ -161,6 +161,7 @@ async function processAudioBuffer(frames, userId, ws, session) {
 
         //E2ELatency
         const agentAudioReadyAt = Date.now()
+        let e2eLatency = null
         if(session.e2eStartTime){
             const e2eLatency = agentAudioReadyAt - session.e2eStartTime
             ws.send(JSON.stringify({
@@ -179,7 +180,7 @@ async function processAudioBuffer(frames, userId, ws, session) {
         ws.send(ttsResult.audioBuffer)
         log("TURN_COMPLETE", {
             sessionId: userId,
-            e2eLatency : e2eLatency? e2eLatency : agentAudioReadyAt - session.e2eStartTime
+            e2eLatency 
         })
     }
 }
