@@ -8,6 +8,7 @@ import { getLLMResponse } from "./src/llm/openrouter.js"
 import { textToSpeech } from "./src/tts/deepgram.js"
 import { webSearch } from "./src/search/tavily.js"
 import { loadMemory,saveMemory } from "./src/memory.js"
+import { log } from "./src/logger.js"
 
 
 const app = express()
@@ -67,9 +68,12 @@ async function processAudioBuffer(frames, userId, ws, session) {
     }
     const wav = createWavBuffer(combined);
 
-    console.log(`[${userId}] STT with ${frames.length} frames`);
-
     const sttStartTime = Date.now()
+
+    log("TURN_END", {
+        sessionId: userId,
+        frames: session.buffer.length
+    })
 
     const { result } = await deepgram.listen.prerecorded.transcribeFile(wav, {
         model: "nova-2",
@@ -159,7 +163,6 @@ async function processAudioBuffer(frames, userId, ws, session) {
         const agentAudioReadyAt = Date.now()
         if(session.e2eStartTime){
             const e2eLatency = agentAudioReadyAt - session.e2eStartTime
-            console.log("E2ELatency: ",e2eLatency)
             ws.send(JSON.stringify({
                 type: "metric",
                 name: "e2eLatency",
@@ -174,6 +177,10 @@ async function processAudioBuffer(frames, userId, ws, session) {
             data : ttsResult.ttsLatency
         }))
         ws.send(ttsResult.audioBuffer)
+        log("TURN_COMPLETE", {
+            sessionId: userId,
+            e2eLatency
+        })
     }
 }
 
@@ -188,7 +195,7 @@ wss.on("connection",(ws) => {
         systemPrompt : "You are a concise, friendly AI voice assistant named Aiko.",
         history: conversationMemory[userId] || []
     })
-    console.log(`User ${userId} connected`);
+    log("SESSION_CONNECTED", { sessionId: userId })
 
     ws.send(JSON.stringify({
         type : "session_id",
@@ -237,10 +244,10 @@ wss.on("connection",(ws) => {
                 session.e2eStartTime = vadDetectedAt
                 const vadLatency = vadDetectedAt - session.speechEndTime
 
-                console.log("VAD FIRED", {
+                log("VAD_DETECTED",{
+                    sessionId: userId,
                     vadLatency,
-                    silenceDurationMS,
-                    now: vadDetectedAt
+                    silenceDurationMS
                 })
 
 
@@ -269,5 +276,8 @@ wss.on("connection",(ws) => {
         }
 
     })
-    ws.on("close", () => sessions.delete(userId));
+    ws.on("close", () => {
+        log("SESSION_DISCONNECTED", { sessionId: userId })
+        sessions.delete(userId)
+    });
 })
