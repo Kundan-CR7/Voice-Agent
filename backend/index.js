@@ -7,12 +7,14 @@ import { deepgram } from "./src/deepgramClient.js"
 import { getLLMResponse } from "./src/llm/openrouter.js"
 import { textToSpeech } from "./src/tts/deepgram.js"
 import { webSearch } from "./src/search/tavily.js"
+import { loadMemory,saveMemory } from "./src/memory.js"
 
 
 const app = express()
 app.use(cors())
 
 const sessions = new Map();
+const conversationMemory = loadMemory()
 
 app.get("/", (req, res) => {
   res.send("Voice Agent backend is live");
@@ -99,19 +101,27 @@ async function processAudioBuffer(frames, userId, ws, session) {
             text: transcript,
         }));
 
+        session.history.push({ role: "user", text: transcript })
+
         ws.send(JSON.stringify({
             type : "metric",
             name : "sttLatency",
             data : sttLatency
         }))
+        const conversationContext = session.history
+            .slice(-10)
+            .map(m => `${m.role}: ${m.text}`)
+            .join("\n")
+
         const augmentedSystemPrompt = `
         ${session.systemPrompt}
 
+        Previous conversation:
+        ${conversationContext}
+
         ${searchContext ? "Use the following real-time information:" : ""}
         ${searchContext}
-
-        When using this information, cite sources like (Source 1).
-        `;
+        `
 
         const {text,metrics} = await getLLMResponse(transcript,augmentedSystemPrompt) //LLM Reply
 
@@ -135,6 +145,12 @@ async function processAudioBuffer(frames, userId, ws, session) {
             role : "agent",
             text : agentReply
         }))
+
+        session.history.push({ role: "agent", text: agentReply })
+
+        conversationMemory[userId] = session.history
+        saveMemory(conversationMemory)
+
 
         //TTS
         const ttsResult = await textToSpeech(agentReply)
@@ -169,7 +185,8 @@ wss.on("connection",(ws) => {
         speechFrameCount:0,
         speechStartTime: null,
         lastSpeechTime: null,
-        systemPrompt : "You are a concise, friendly AI voice assistant."
+        systemPrompt : "You are a concise, friendly AI voice assistant named Aiko.",
+        history: conversationMemory[userId] || []
     })
     console.log(`User ${userId} connected`);
 
