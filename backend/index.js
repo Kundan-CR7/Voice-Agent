@@ -21,7 +21,7 @@ app.get("/", (req, res) => {
   res.send("Voice Agent backend is live");
 });
 
-app.post("/session/:userId/context",express.json(),(req,res) => {
+app.post("/session/:userId",express.json(),(req,res) => {
     const {userId} = req.params
     const {systemPrompt} = req.body
 
