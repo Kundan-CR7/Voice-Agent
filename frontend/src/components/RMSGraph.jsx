@@ -5,7 +5,12 @@ const RMSGraph = ({ data = [], threshold = 0.04 }) => {
 
     useEffect(() => {
         const canvas = canvasRef.current;
-        if (!canvas || data.length === 0) return;
+        if (!canvas) return;
+
+        // Fallback data if empty to prevent empty box
+        const displayData = data.length > 0
+            ? data
+            : Array(100).fill(0).map(() => Math.random() * 0.005);
 
         const ctx = canvas.getContext("2d");
 
@@ -15,7 +20,8 @@ const RMSGraph = ({ data = [], threshold = 0.04 }) => {
         ctx.clearRect(0, 0, W, H);
 
         /* ---------- Background ---------- */
-        ctx.fillStyle = "#0f172a";
+        // Transparent or matching the card bg
+        ctx.fillStyle = "rgba(0,0,0,0.2)";
         ctx.fillRect(0, 0, W, H);
 
         /* ---------- Axes ---------- */
@@ -75,9 +81,9 @@ const RMSGraph = ({ data = [], threshold = 0.04 }) => {
         ctx.lineWidth = 1.5;
         ctx.beginPath();
 
-        data.forEach((v, i) => {
+        displayData.forEach((v, i) => {
             const x =
-                40 + (i / (data.length - 1)) * (W - 50);
+                40 + (i / (displayData.length - 1)) * (W - 50);
             const y =
                 H - 30 - Math.min(v / maxRMS, 1) * graphHeight;
 

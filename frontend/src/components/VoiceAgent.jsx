@@ -3,7 +3,7 @@ import { noiseSuppression, playPCM16, calculateRMS } from '../utils/helper.js'
 import { AudioWaveform } from './AudioWaveform.jsx'
 import RMSGraph from './RMSGraph.jsx'
 
-const VoiceAgent = ({ setRmsData, setMetrics }) => {
+const VoiceAgent = ({ setRmsData, setMetrics,isFullScreen }) => {
     const [userId, setUserId] = useState(null)
     const [status, setStatus] = useState("disconnected")
     const wsRef = useRef(null)
@@ -173,44 +173,58 @@ const VoiceAgent = ({ setRmsData, setMetrics }) => {
     }, [transcripts])
 
     return (
-        <div className='p-8 rounded-lg shadow-xl flex flex-col items-center bg-transparent border min-w-[55vw] h-[85vh]'>
+        <div className={`
+             relative
+            flex flex-col items-center 
+            rounded-3xl border border-slate-800
+            bg-slate-900/80 shadow-2xl
+            transition-all duration-500 ease-in-out
+            overflow-hidden
+             ${isFullScreen ? 'h-full w-full' : 'h-[85vh] w-full min-w-[55vw]'}
+        `}>
 
-            {/* Avatar */}
-            <div className={`relative w-32 h-32 rounded-full overflow-hidden border-4 shadow-2xl z-10
-            ${agentState === "speaking" ? "ring-4 ring-purple-500 animate-pulse" : ""}
-            ${agentState === "listening" ? "ring-4 ring-blue-500 animate-pulse" : ""}
-            `}>
-                <img src='/agent.jpg' className='h-full w-full object-cover' />
-            </div>
+            <div className="w-full flex-1 flex flex-col items-center p-8 gap-6 relative z-10">
 
-            {/* State */}
-            <div className='mt-4 flex items-center space-x-2 border border-gray-500 bg-transparent px-4 py-1 rounded-full'>
-                <div className={`w-3 h-3 rounded-full ${agentState === 'listening' ? 'bg-blue-500 animate-pulse' :
-                    agentState === 'thinking' ? 'bg-yellow-500 animate-pulse' :
-                        agentState === 'speaking' ? 'bg-purple-500 animate-pulse' : 'bg-gray-500'
-                    }`}></div>
-                <p className='capitalize'>{agentState}</p>
-            </div>
+                {/* Avatar Section */}
+                <div className="relative group">
+                    {/* Glow ring */}
+                    <div className={`absolute -inset-1 rounded-full blur-sm opacity-50 transition duration-500 
+                ${agentState === "speaking" ? "bg-purple-500/50" : agentState === "listening" ? "bg-indigo-500/50" : "bg-transparent"}
+                `}></div>
 
-            {/* AudioWaveform */}
-            <div className='flex flex-col items-center shrink-0'>
-                <AudioWaveform state={agentState} />
-            </div>
+                    <div className={`relative w-36 h-36 rounded-full overflow-hidden border-4 z-10 shadow-2xl transition-all duration-300
+                ${agentState === "speaking" ? "border-purple-500 scale-105" : ""}
+                ${agentState === "listening" ? "border-indigo-400 scale-105" : "border-slate-700"}
+                `}>
+                        <img src='/agent.jpg' className='h-full w-full object-cover transition-transform duration-700 hover:scale-110' alt="Agent" />
+                    </div>
+                </div>
 
+                {/* State Badge */}
+                <div className='flex items-center space-x-2.5 bg-slate-950/50 border border-slate-700 px-5 py-2 rounded-full shadow-inner'>
+                    <div className={`w-2.5 h-2.5 rounded-full shadow-lg ${agentState === 'listening' ? 'bg-indigo-500 animate-pulse shadow-indigo-500/50' :
+                        agentState === 'thinking' ? 'bg-amber-400 animate-pulse shadow-amber-400/50' :
+                            agentState === 'speaking' ? 'bg-purple-500 animate-pulse shadow-purple-500/50' : 'bg-slate-500'
+                        }`}></div>
+                    <p className='capitalize text-sm font-medium text-slate-300 tracking-wide'>{agentState}</p>
+                </div>
 
+                {/* AudioWaveform */}
+                <div className={`transition-all duration-500 ${isFullScreen ? 'scale-125 my-8' : 'scale-100 my-2'}`}>
+                    <AudioWaveform state={agentState} />
+                </div>
 
-            {/* Control */}
-            <div className='w-full flex-1 flex flex-col items-center justify-between p-4 overflow-hidden gap-4'>
+                {/* Control Button */}
                 <button
                     onClick={isRecording ? stopRecording : startRecording}
                     className={`
                 group relative inline-flex items-center gap-2
                 px-8 py-3 rounded-2xl font-semibold
                 transition-all duration-300
-                shadow-lg shadow-primary/20 hover:shadow-primary/40
+                shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40
 
                 ${!isRecording
-                            ? "bg-[#736ced] text-white hover:bg-primary/90 focus:ring-primary"
+                            ? "bg-[#736ced] text-white hover:bg-[#605ac7] focus:ring-[#736ced]"
                             : "bg-red-500/10 text-red-400 border border-red-500/50 hover:bg-red-500/20 focus:ring-red-500"
                         }
             `}
@@ -226,27 +240,29 @@ const VoiceAgent = ({ setRmsData, setMetrics }) => {
                 </button>
 
 
-                {/* Transcript */}
+                {/* Transcript Area */}
                 <div
-                    className="flex-1 w-full px-4 py-2 overflow-y-auto space-y-4 custom-scrollbar"
+                    className="flex-1 w-full max-w-4xl px-2 py-4 overflow-y-auto space-y-4 custom-scrollbar mask-image-gradient"
                     ref={transcriptRef}
                 >
                     {transcripts.length === 0 ? (
-                        <p className="text-gray-400 text-sm text-center">Try to Speak Something!...</p>
+                        <div className="h-full flex flex-col items-center justify-center text-slate-500 opacity-60">
+                            <p className="text-sm">Start the conversation to see transcripts...</p>
+                        </div>
                     ) : (
                         transcripts.map((t, i) => (
                             <div
                                 key={i}
-                                className={`flex ${t.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                                className={`flex ${t.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}
                             >
                                 <div
-                                    className={`max-w-[75%] px-4 py-2 rounded-2xl text-sm leading-relaxed shadow border-4
+                                    className={`max-w-[80%] px-5 py-3 rounded-2xl text-[15px] leading-relaxed shadow-md
                             ${t.role === 'user'
-                                            ? 'bg-gray-800/70 text-green-300 border border-white/5 rounded-bl-sm'
-                                            : 'bg-blue-500/20 text-blue-200 border border-blue-400/20 rounded-br-sm'
+                                            ? 'bg-indigo-600 text-white rounded-br-sm shadow-indigo-500/10'
+                                            : 'bg-slate-800 text-slate-200 border border-slate-700 rounded-bl-sm shadow-slate-900/20'
                                         }`}
                                 >
-                                    <div className="mb-1 text-xs font-semibold uppercase opacity-50">
+                                    <div className={`mb-1 text-[10px] font-bold uppercase tracking-wider opacity-60 ${t.role === 'user' ? 'text-indigo-200' : 'text-slate-400'}`}>
                                         {t.role === 'user' ? 'You' : 'Agent'}
                                     </div>
                                     {t.text}
