@@ -2,6 +2,11 @@
 
 A production-grade, real-time voice assistant built with React and Node.js. The agent features low-latency speech interaction, custom Voice Activity Detection (VAD), barge-in capability, and integration with Deepgram (STT/TTS), OpenRouter (LLM), and Tavily (Search).
 
+## Live Demo
+
+Hosted application:  
+https://voice-agent-bice.vercel.app/
+
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Status](https://img.shields.io/badge/status-Active-green.svg)
 
