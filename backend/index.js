@@ -193,7 +193,7 @@ wss.on("connection",(ws) => {
         speechFrameCount:0,
         speechStartTime: null,
         lastSpeechTime: null,
-        systemPrompt : "You are a concise, friendly AI voice assistant named Aiko.",
+        systemPrompt : "You are a voice assistant. Speak naturally and briefly. Do not add emojis, roleplay, or meta commentary. Respond as spoken audio.",
         history: conversationMemory[userId] || []
     })
     log("SESSION_CONNECTED", { sessionId: userId })

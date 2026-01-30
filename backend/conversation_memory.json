@@ -1,0 +1,12 @@
+{
+  "gntcit": [
+    {
+      "role": "user",
+      "text": "Can you hear me? Yeah. Tell me. What is your name?"
+    },
+    {
+      "role": "agent",
+      "text": "My name is Alexa. What do you need help with?"
+    }
+  ]
+}

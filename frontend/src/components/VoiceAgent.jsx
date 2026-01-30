@@ -116,7 +116,7 @@ const VoiceAgent = ({ setRmsData, setMetrics,isFullScreen }) => {
 
 
     useEffect(() => {
-        wsRef.current = new WebSocket(hostedUrl)
+        wsRef.current = new WebSocket(localUrl)
         wsRef.current.binaryType = "arraybuffer"
         wsRef.current.onopen = () => {
             setStatus("connected")
@@ -208,6 +208,12 @@ const VoiceAgent = ({ setRmsData, setMetrics,isFullScreen }) => {
                         }`}></div>
                     <p className='capitalize text-sm font-medium text-slate-300 tracking-wide'>{agentState}</p>
                 </div>
+
+                {userId && (
+                    <p className="text-xs text-slate-500 tracking-wide">
+                        Session ID: <span className="font-mono text-slate-300">{userId}</span>
+                    </p>
+                )}
 
                 {/* AudioWaveform */}
                 <div className={`transition-all duration-500 ${isFullScreen ? 'scale-125 my-8' : 'scale-100 my-2'}`}>

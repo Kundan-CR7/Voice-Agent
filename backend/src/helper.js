@@ -74,6 +74,5 @@ export function shouldSearch(text){
     "price", "weather", "score", "who won",
     "recent", "now", "happening"
   ];
-  const textLower = text.toLowerCase()
-  return triggers.some(t => textLower.includes(t))
+  return triggers.some(t => text.toLowerCase().includes(t))
 }
